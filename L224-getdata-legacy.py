@@ -3,8 +3,6 @@
 # This function will demonstrate the basic capacity to read temperatures from the Lakeshore 224 Temperature Monitor
 # and write them to the influxDB database. This data will then be pulled onto the Grafana display at http://localhost:3000/
 
-# This updated version queries for the voltage instead of temperature
-
 # Import indluxDB functions
 import influxdb_client, os, time
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -25,24 +23,20 @@ from lakeshore import Model224
 
 my_instrument = Model224()
 
-channels = ["CHA","CHB","CHC1", "CHC2", "CHC3", "CHC4"]
+def writedata(start_val):
+	for p in range(0,50):
+		float(start_val)
+		tempA = my_instrument.get_kelvin_reading('A')
+		tempB = my_instrument.get_kelvin_reading('B')
+		PA = influxdb_client.Point("temperature measurement").tag("source", "CHA").field("degree Kelvin", tempA)
+		PB = influxdb_client.Point("temperature measurement").tag("source", "CHB").field("degree Kelvin", tempB)
+		start_val+= 1
+		write_api.write(bucket=bucket, org=org, record=PA)
+		write_api.write(bucket=bucket, org=org, record=PB)
+		time.sleep(1) # separate points by 5 seconds
 
-loc = "Cooldown2 HK"
-def writedata():
-	for p in range(0,50):  
-		# Measure temps and voltages
-		temps = [my_instrument.get_kelvin_reading(chan[2:]) for chan in channels]
-		volts = [my_instrument.get_sensor_reading(chan[2:]) for chan in channels]
-		
-		points_temp = [influxdb_client.Point(loc).tag("source", chan).field("Kelvin", temp) for chan,temp in zip(channels,temps)]
-		points_volt = [influxdb_client.Point(loc).tag("source", chan).field("Voltage", volt) for chan,volt in zip(channels,volts)]
 
-		for p in points_temp:
-			write_api.write(bucket=bucket, org=org, record= p)
-		for p in points_volt:
-			write_api.write(bucket=bucket, org=org, record= p)
-		
 
 while(1):
-	writedata()
+	writedata(0)
 	#time.sleep(30)
